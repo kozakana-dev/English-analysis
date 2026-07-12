@@ -1,41 +1,69 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 from PIL import Image
-import io
 
-# APIキーを設定 (⚠️ あなたのキーに書き換えてください)
-genai.configure(api_key="")
+# 1. 画面の基本設定
+st.set_page_config(page_title="英文SVOC解析アプリ", layout="centered")
+st.title("📱 英文 SVOC・文法解析アプリ")
 
-st.title("英語構文解析カメラ")
+# 2. APIキーの読み込み（Secrets機能を使うのが最も安全です）
+# Streamlit Cloudの「Manage app」 > 「Secrets」に GOOGLE_API_KEY を登録してください
+api_key = st.secrets["import streamlit as st
+from google import genai
+from PIL import Image
 
-# 入力方法の選択（テキストかカメラか）
-input_method = st.radio("解析方法を選んでください", ("テキスト入力", "カメラで撮影"))
+# 1. 画面の基本設定
+st.set_page_config(page_title="英文SVOC解析アプリ", layout="centered")
+st.title("📱 英文 SVOC・文法解析アプリ")
 
-if input_method == "テキスト入力":
-    user_text = st.text_input("解析したい英文を入力してください")
-    submit_btn = st.button("テキストを解析")
-    image_data = None
+# 2. APIキーの読み込み（Secrets機能を使うのが最も安全です）
+# Streamlit Cloudの「Manage app」 > 「Secrets」に GOOGLE_API_KEY を登録してください
+api_key = st.secrets["GOOGLE_API_KEY"]
+client = genai.Client(api_key=api_key)
 
-else: # カメラで撮影
-    camera_image = st.camera_input("英文を撮影してください")
-    submit_btn = st.button("画像を解析")
-    image_data = camera_image
+# 3. アップロードエリア
+uploaded_file = st.file_uploader("英文の写真を撮るか、画像を選択してください", type=["png", "jpg", "jpeg"])
 
-# 解析実行
-if submit_btn:
-    with st.spinner("解析中..."):
-        model = model = genai.GenerativeModel('gemini-1.5-flash') # 最新モデルを使用
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="解析対象の画像", use_container_width=True)
 
-        if image_data:
-            # 画像がアップロードされている場合
-            img = Image.open(image_data)
-            response = model.generate_content(["この画像に写っている英文を読み取り、構文解析して解説してください。", img])
-            st.image(img, caption="撮影された画像", use_column_width=True)
-            st.write(response.text)
+    if st.button("✨ 英文を解析する", type="primary"):
+        with st.spinner("AIが解析しています..."):
+            try:
+                prompt = "添付画像から英文を読み取り、SVOC解析と日本語訳、文法解説を行ってください。"
+                
+                # モデル名を正しいもの（gemini-2.0-flashなど）に修正
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash", 
+                    contents=[prompt, image]
+                )
 
-        elif input_method == "テキスト入力" and user_text:
-            # テキストの場合
-            response = model.generate_content(f"この英文を構文解析して解説してください: {user_text}")
-            st.write(response.text)
-        else:
-            st.warning("入力（テキストまたは撮影）が必要です")
+                st.markdown("### 📚 解析結果")
+                st.markdown(response.text)
+            except Exception as e:
+                st.error(f"エラーが発生しました: {e}")"]
+client = genai.Client(api_key=api_key)
+
+# 3. アップロードエリア
+uploaded_file = st.file_uploader("英文の写真を撮るか、画像を選択してください", type=["png", "jpg", "jpeg"])
+
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="解析対象の画像", use_container_width=True)
+
+    if st.button("✨ 英文を解析する", type="primary"):
+        with st.spinner("AIが解析しています..."):
+            try:
+                prompt = "添付画像から英文を読み取り、SVOC解析と日本語訳、文法解説を行ってください。"
+                
+                # モデル名を正しいもの（gemini-2.0-flashなど）に修正
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash", 
+                    contents=[prompt, image]
+                )
+
+                st.markdown("### 📚 解析結果")
+                st.markdown(response.text)
+            except Exception as e:
+                st.error(f"エラーが発生しました: {e}")
